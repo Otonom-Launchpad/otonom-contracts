@@ -1,0 +1,26 @@
+[toolchain]
+
+[features]
+seeds = false
+short = false
+
+[programs.localnet]
+ofund_token = "AudtevJ3KRC4ZQYFqY9cB9Wa3KEY5zweboxa6chJnfLW"
+
+[programs.devnet]
+ofund_token = "CX8q3ZNuLrTUPsxWmL6aqYUr9RKMoyVBu8kEE8fsF5B8"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+[test]
+startup_wait = 20000
+requires_bpf = false
+feature_flags = ["skip-genesis-archive"]
