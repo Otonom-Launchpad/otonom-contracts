@@ -3,7 +3,7 @@ use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount, Transfer};
 use anchor_spl::associated_token::AssociatedToken;
 use std::convert::TryFrom;
 
-declare_id!("AudtevJ3KRC4ZQYFqY9cB9Wa3KEY5zweboxa6chJnfLW");
+declare_id!("Gbq9aJu54T56uUPneuJa2KrCAYZTWx4r2uH78y4pZA7G");
 
 #[program]
 pub mod ofund_token {

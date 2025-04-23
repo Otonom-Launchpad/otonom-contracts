@@ -1,14 +1,16 @@
 [toolchain]
+anchor_version = "0.31.1"
+solana_version = "1.18.0"
 
 [features]
 seeds = false
 short = false
 
 [programs.localnet]
-ofund_token = "AudtevJ3KRC4ZQYFqY9cB9Wa3KEY5zweboxa6chJnfLW"
+ofund_token = "Gbq9aJu54T56uUPneuJa2KrCAYZTWx4r2uH78y4pZA7G"
 
 [programs.devnet]
-ofund_token = "CX8q3ZNuLrTUPsxWmL6aqYUr9RKMoyVBu8kEE8fsF5B8"
+ofund_token = "Gbq9aJu54T56uUPneuJa2KrCAYZTWx4r2uH78y4pZA7G"
 
 [registry]
 url = "https://api.apr.dev"
