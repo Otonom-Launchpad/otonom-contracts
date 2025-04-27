@@ -12,11 +12,12 @@ const idl = JSON.parse(fs.readFileSync('./otonom-frontend/src/lib/ofund-idl.json
 const PROGRAM_ID = new PublicKey('EPwpbJYL6H3u3VDMShoJ6XFtdPQ9FJAFpEpjyMH7UADN');
 const OFUND_MINT = new PublicKey('4pV3umk8pY62ry8FsnMbQfJBYgpWnzWcC67UCMUevXLY');
 
+// Load environment variables
+require('dotenv').config();
+
 // Use the SPG wallet keypair that was created during deployment
-const spgWalletSecretKey = [
-  67,102,135,211,38,57,7,245,104,84,213,157,3,16,72,150,18,166,183,3,36,86,9,68,37,172,114,28,56,239,244,146,
-  8,81,141,151,132,117,57,184,178,19,20,243,189,197,35,104,136,16,227,253,240,176,230,5,236,214,130,210,168,45,12,223
-];
+// Load from environment variable instead of hardcoding for security
+const spgWalletSecretKey = process.env.SPG_WALLET_SECRET_KEY.split(',').map(num => parseInt(num.trim()));
 
 const payerKeypair = Keypair.fromSecretKey(Uint8Array.from(spgWalletSecretKey));
 
