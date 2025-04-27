@@ -1,0 +1,260 @@
+{
+  "version": "0.1.0",
+  "name": "otonom_minimal",
+  "instructions": [
+    {
+      "name": "initializeMint",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "mint",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "mintAuthorityPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mintAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "authorityBump",
+          "type": "u8"
+        },
+        {
+          "name": "tokenName",
+          "type": "string"
+        },
+        {
+          "name": "tokenSymbol",
+          "type": "string"
+        },
+        {
+          "name": "tokenUri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "initializeExistingMint",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "mint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mintAuthorityPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mintAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "authorityBump",
+          "type": "u8"
+        },
+        {
+          "name": "tokenName",
+          "type": "string"
+        },
+        {
+          "name": "tokenSymbol",
+          "type": "string"
+        },
+        {
+          "name": "tokenUri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "registerUser",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "userProfile",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mintAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mintAuthorityPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "userBump",
+          "type": "u8"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "MintAuthority",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "tokenName",
+            "type": "string"
+          },
+          {
+            "name": "tokenSymbol",
+            "type": "string"
+          },
+          {
+            "name": "tokenUri",
+            "type": "string"
+          },
+          {
+            "name": "isInitialized",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserProfile",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "publicKey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "tier",
+            "type": "u8"
+          },
+          {
+            "name": "totalInvested",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Unauthorized",
+      "msg": "Unauthorized access"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidTokenAccount",
+      "msg": "Invalid token account"
+    },
+    {
+      "code": 6002,
+      "name": "MintAuthorityNotInitialized",
+      "msg": "Mint authority not initialized"
+    }
+  ],
+  "metadata": {
+    "address": "EPwpbJYL6H3u3VDMShoJ6XFtdPQ9FJAFpEpjyMH7UADN"
+  }
+}
