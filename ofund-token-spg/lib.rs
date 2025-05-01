@@ -89,6 +89,58 @@ pub mod otonom_minimal {
         msg!("User registered successfully and granted initial tokens");
         Ok(())
     }
+    
+    // Initialize a new project
+    pub fn initialize_project(
+        ctx: Context<InitializeProject>,
+        project_name: String,
+        project_bump: u8,
+    ) -> Result<()> {
+        let project = &mut ctx.accounts.project;
+        project.name = project_name;
+        project.bump = project_bump;
+        project.authority = ctx.accounts.authority.key();
+        project.vault = ctx.accounts.project_vault.key();
+        project.total_raised = 0;
+        
+        msg!("Project initialized: {}", project.name);
+        Ok(())
+    }
+
+    // Invest in a project
+    pub fn invest_in_project(
+        ctx: Context<InvestInProject>,
+        amount: u64,
+    ) -> Result<()> {
+        let user_profile = &mut ctx.accounts.user_profile;
+        let project = &mut ctx.accounts.project;
+        
+        // Transfer tokens from investor to project vault
+        let cpi_accounts = token::Transfer {
+            from: ctx.accounts.investor_token_account.to_account_info(),
+            to: ctx.accounts.project_vault.to_account_info(),
+            authority: ctx.accounts.investor.to_account_info(),
+        };
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+        
+        token::transfer(cpi_ctx, amount)?;
+        
+        // Update user's total invested amount
+        user_profile.total_invested = user_profile.total_invested.checked_add(amount)
+            .ok_or(error!(OtonomError::ArithmeticOverflow))?;
+        
+        // Update project's total raised
+        project.total_raised = project.total_raised.checked_add(amount)
+            .ok_or(error!(OtonomError::ArithmeticOverflow))?;
+        
+        // Update user tier based on new total
+        user_profile.tier = calculate_tier(user_profile.total_invested);
+        
+        msg!("Investment processed successfully: {} tokens", amount);
+        msg!("Project {} has now raised {} tokens", project.name, project.total_raised);
+        Ok(())
+    }
 }
 
 // Calculate tier based on token balance
@@ -217,6 +269,72 @@ pub struct RegisterUser<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
+// Initialize a new project
+#[derive(Accounts)]
+#[instruction(project_name: String, project_bump: u8)]
+pub struct InitializeProject<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + 4 + 50 + 1 + 32 + 32 + 8, // Space for account data
+        seeds = [b"project", project_name.as_bytes()],
+        bump,
+    )]
+    pub project: Account<'info, Project>,
+    
+    #[account(
+        mut,
+        constraint = project_vault.owner == authority.key(),
+    )]
+    pub project_vault: Account<'info, TokenAccount>,
+    
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+// Invest in a project
+#[derive(Accounts)]
+pub struct InvestInProject<'info> {
+    #[account(mut)]
+    pub investor: Signer<'info>,
+    
+    #[account(
+        mut,
+        seeds = [b"user-profile", investor.key().as_ref()],
+        bump = user_profile.bump,
+    )]
+    pub user_profile: Account<'info, UserProfile>,
+    
+    #[account(
+        mut,
+        seeds = [b"project", project.name.as_bytes()],
+        bump = project.bump,
+    )]
+    pub project: Account<'info, Project>,
+    
+    #[account(
+        mut,
+        constraint = investor_token_account.owner == investor.key(),
+        constraint = investor_token_account.mint == mint.key(),
+    )]
+    pub investor_token_account: Account<'info, TokenAccount>,
+    
+    #[account(
+        mut,
+        constraint = project_vault.owner == project.authority,
+        constraint = project_vault.mint == mint.key(),
+    )]
+    pub project_vault: Account<'info, TokenAccount>,
+    
+    pub mint: Account<'info, Mint>,
+    
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
 // Mint Authority Account
 #[account]
 pub struct MintAuthority {
@@ -238,6 +356,16 @@ pub struct UserProfile {
     pub total_invested: u64,
 }
 
+// Project Account
+#[account]
+pub struct Project {
+    pub name: String,
+    pub bump: u8,
+    pub authority: Pubkey,
+    pub vault: Pubkey,
+    pub total_raised: u64,
+}
+
 // Error definitions for more robust error handling
 #[error_code]
 pub enum OtonomError {
@@ -247,4 +375,6 @@ pub enum OtonomError {
     InvalidTokenAccount,
     #[msg("Mint authority not initialized")]
     MintAuthorityNotInitialized,
+    #[msg("Arithmetic overflow occurred")]
+    ArithmeticOverflow,
 }
