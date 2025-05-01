@@ -23,7 +23,7 @@ otonom-contracts/
 
 ## Deployed Contract Information
 
-- **Program ID**: `EPwpbJYL6H3u3VDMShoJ6XFtdPQ9FJAFpEpjyMH7UADN`
+- **Program ID**: `CWYLQDPfH6eywYGJfrSdX2cVMczm88x3V2Rd4tcgk4jf`
 - **OFUND Token Mint**: `4pV3umk8pY62ry8FsnMbQfJBYgpWnzWcC67UCMUevXLY`
 - **Network**: Solana Devnet
 - **Deployment Method**: Solana Playground (SPG)
