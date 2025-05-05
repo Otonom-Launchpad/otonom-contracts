@@ -3,10 +3,10 @@ use anchor_spl::token::{self, Mint, Token, TokenAccount};
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("EPwpbJYL6H3u3VDMShoJ6XFtdPQ9FJAFpEpjyMH7UADN");
+declare_id!("CWYLQDPfH6eywYGJfrSdX2cVMczm88x3V2Rd4tcgk4jf");
 
 #[program]
-pub mod otonom_minimal {
+pub mod otonom_program {
     use super::*;
 
     // Initialize the mint authority for a new OFUND token
@@ -89,7 +89,7 @@ pub mod otonom_minimal {
         msg!("User registered successfully and granted initial tokens");
         Ok(())
     }
-    
+
     // Initialize a new project
     pub fn initialize_project(
         ctx: Context<InitializeProject>,
@@ -102,19 +102,16 @@ pub mod otonom_minimal {
         project.authority = ctx.accounts.authority.key();
         project.vault = ctx.accounts.project_vault.key();
         project.total_raised = 0;
-        
+
         msg!("Project initialized: {}", project.name);
         Ok(())
     }
 
     // Invest in a project
-    pub fn invest_in_project(
-        ctx: Context<InvestInProject>,
-        amount: u64,
-    ) -> Result<()> {
+    pub fn invest_in_project(ctx: Context<InvestInProject>, amount: u64) -> Result<()> {
         let user_profile = &mut ctx.accounts.user_profile;
         let project = &mut ctx.accounts.project;
-        
+
         // Transfer tokens from investor to project vault
         let cpi_accounts = token::Transfer {
             from: ctx.accounts.investor_token_account.to_account_info(),
@@ -123,22 +120,37 @@ pub mod otonom_minimal {
         };
         let cpi_program = ctx.accounts.token_program.to_account_info();
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
-        
+
         token::transfer(cpi_ctx, amount)?;
-        
+
         // Update user's total invested amount
-        user_profile.total_invested = user_profile.total_invested.checked_add(amount)
+        user_profile.total_invested = user_profile
+            .total_invested
+            .checked_add(amount)
             .ok_or(error!(OtonomError::ArithmeticOverflow))?;
-        
+
         // Update project's total raised
-        project.total_raised = project.total_raised.checked_add(amount)
+        project.total_raised = project
+            .total_raised
+            .checked_add(amount)
             .ok_or(error!(OtonomError::ArithmeticOverflow))?;
-        
+
         // Update user tier based on new total
         user_profile.tier = calculate_tier(user_profile.total_invested);
-        
+
+        // Record this investment for on-chain portfolio history
+        user_profile.investments.push(Investment {
+            project: project.key(),
+            amount,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+
         msg!("Investment processed successfully: {} tokens", amount);
-        msg!("Project {} has now raised {} tokens", project.name, project.total_raised);
+        msg!(
+            "Project {} has now raised {} tokens",
+            project.name,
+            project.total_raised
+        );
         Ok(())
     }
 }
@@ -158,6 +170,26 @@ fn calculate_tier(balance: u64) -> u8 {
     } else {
         0
     }
+}
+
+// Constants for user profile size and investment cap
+const MAX_INVESTS: usize = 20; // maximum number of investments stored per user
+const INVEST_SIZE: usize = 32 + 8 + 8; // Pubkey (32) + amount (u64) + timestamp (i64)
+const USER_PROFILE_SPACE: usize =
+    8  + // discriminator
+    32 + // user pubkey
+    1  + // bump
+    1  + // tier
+    8  + // total_invested
+    4  + // vec length prefix (Anchor serialises Vec with u32 length)
+    MAX_INVESTS * INVEST_SIZE;
+
+// Investment struct
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct Investment {
+    pub project: Pubkey,
+    pub amount: u64,
+    pub timestamp: i64,
 }
 
 // Initialize Mint Authority for New Token
@@ -235,7 +267,7 @@ pub struct RegisterUser<'info> {
     #[account(
         init,
         payer = user,
-        space = 8 + 32 + 1 + 1 + 8,
+        space = USER_PROFILE_SPACE,
         seeds = [b"user-profile", user.key().as_ref()],
         bump,
     )]
@@ -275,7 +307,7 @@ pub struct RegisterUser<'info> {
 pub struct InitializeProject<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
-    
+
     #[account(
         init,
         payer = authority,
@@ -284,13 +316,13 @@ pub struct InitializeProject<'info> {
         bump,
     )]
     pub project: Account<'info, Project>,
-    
+
     #[account(
         mut,
         constraint = project_vault.owner == authority.key(),
     )]
     pub project_vault: Account<'info, TokenAccount>,
-    
+
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
@@ -300,37 +332,37 @@ pub struct InitializeProject<'info> {
 pub struct InvestInProject<'info> {
     #[account(mut)]
     pub investor: Signer<'info>,
-    
+
     #[account(
         mut,
         seeds = [b"user-profile", investor.key().as_ref()],
         bump = user_profile.bump,
     )]
     pub user_profile: Account<'info, UserProfile>,
-    
+
     #[account(
         mut,
         seeds = [b"project", project.name.as_bytes()],
         bump = project.bump,
     )]
     pub project: Account<'info, Project>,
-    
+
     #[account(
         mut,
         constraint = investor_token_account.owner == investor.key(),
         constraint = investor_token_account.mint == mint.key(),
     )]
     pub investor_token_account: Account<'info, TokenAccount>,
-    
+
     #[account(
         mut,
         constraint = project_vault.owner == project.authority,
         constraint = project_vault.mint == mint.key(),
     )]
     pub project_vault: Account<'info, TokenAccount>,
-    
+
     pub mint: Account<'info, Mint>,
-    
+
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
@@ -354,6 +386,7 @@ pub struct UserProfile {
     pub bump: u8,
     pub tier: u8,
     pub total_invested: u64,
+    pub investments: Vec<Investment>,
 }
 
 // Project Account
