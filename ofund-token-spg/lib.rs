@@ -265,7 +265,7 @@ pub struct RegisterUser<'info> {
     pub user: Signer<'info>,
 
     #[account(
-        init,
+        init_if_needed,
         payer = user,
         space = USER_PROFILE_SPACE,
         seeds = [b"user-profile", user.key().as_ref()],
